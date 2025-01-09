@@ -15,5 +15,7 @@ A simple tool to manage and install mods from various archive formats.
    git clone git@github.com:<UriYuanKerr69>/SimpleModManager-Rust.git
 
 CREDITS:
+
 eGUI - https://github.com/emilk/egui/tree/master
+
 rfd - https://github.com/PolyMeilex/rfd
