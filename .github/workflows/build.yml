@@ -71,16 +71,11 @@ jobs:
     - name: Check if all builds succeeded
       id: check_builds
       run: |
-        all_success=true
-        for os in ubuntu-latest windows-latest macos-latest; do
-          build_success=${{ needs.build.outputs['build_step_'${os}'.build_success'] }}
-          if [ "$build_success" != "true" ]; then
-            echo "Build for ${os} failed"
-            all_success=false
-            break
-          fi
-        done
-        if [ "$all_success" = "true" ]; then
+        ubuntu_success=${{ needs.build.outputs.build_step_ubuntu-latest.build_success }}
+        windows_success=${{ needs.build.outputs.build_step_windows-latest.build_success }}
+        macos_success=${{ needs.build.outputs.build_step_macos-latest.build_success }}
+        
+        if [ "$ubuntu_success" = "true" ] && [ "$windows_success" = "true" ] && [ "$macos_success" = "true" ]; then
           echo "all_builds_succeeded=true" >> $GITHUB_OUTPUT
         else
           echo "all_builds_succeeded=false" >> $GITHUB_OUTPUT
