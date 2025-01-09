@@ -1,3 +1,10 @@
+[package]
+name = "SimpleModManager-Rust"
+version = "0.0.1"
+edition = "2025"
+license = "MIT OR Apache 2.0"
+authors = ["Uri-Yuan Kerr <uriyuankerr@outlook.com>"]
+
 [dependencies]
 zip = "*"
 sevenz-rust = "*"
