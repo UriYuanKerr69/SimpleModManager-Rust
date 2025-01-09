@@ -71,10 +71,10 @@ jobs:
       id: check_builds
       run: |
         all_success=true
-        for build in ${{ toJSON(matrix.os_target) }}; do
-          build_success=${{ needs.build.outputs['build_step_'${build.os}'.build_success'] }}
+        for os in ${{ toJSON(matrix.os_target.*.os) }}; do
+          build_success=${{ needs.build.outputs['build_step_'${os}'.build_success'] }}
           if [ "$build_success" != "true" ]; then
-            echo "Build for ${build.os} failed"
+            echo "Build for ${os} failed"
             all_success=false
             break
           fi
