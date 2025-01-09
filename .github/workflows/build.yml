@@ -13,13 +13,13 @@ jobs:
   build:
     timeout-minutes: 5
     strategy:
+      fail-fast: false # Don't fail other jobs if one fails
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-        target:
-          - { triple: x86_64-unknown-linux-gnu, os: ubuntu-latest }
-          - { triple: x86_64-pc-windows-gnu, os: windows-latest }
-          - { triple: x86_64-apple-darwin, os: macos-latest }
-    runs-on: ${{ matrix.os }}
+        os_target:
+          - { os: ubuntu-latest, target: x86_64-unknown-linux-gnu }
+          - { os: windows-latest, target: x86_64-pc-windows-gnu }
+          - { os: macos-latest, target: x86_64-apple-darwin }
+    runs-on: ${{ matrix.os_target.os }}
 
     steps:
     - uses: actions/checkout@v3
@@ -30,35 +30,35 @@ jobs:
         profile: minimal
         toolchain: stable
         override: true
-        target: ${{ matrix.target.triple }}
+        target: ${{ matrix.os_target.target }}
 
-    - name: Build for Linux and macOS
-      if: runner.os != 'Windows'
-      id: build_step_unix
+    - name: Build
+      id: build_step
       run: |
-        if cargo build --release --target ${{ matrix.target.triple }}; then
+        if cargo build --release --target ${{ matrix.os_target.target }}; then
           echo "build_success=true" >> $GITHUB_OUTPUT
         else
           echo "build_success=false" >> $GITHUB_OUTPUT
         fi
+      if: matrix.os_target.os != 'windows-latest'
 
     - name: Build for Windows
-      if: runner.os == 'Windows'
-      id: build_step_windows
+      id: build_step
       run: |
-        if (cargo build --release --target ${{ matrix.target.triple }}) {
+        if (cargo build --release --target ${{ matrix.os_target.target }}) {
           echo "build_success=true" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
         } else {
           echo "build_success=false" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
         }
       shell: pwsh
+      if: matrix.os_target.os == 'windows-latest'
 
     - name: Upload Artifact
-      if: steps.build_step_unix.outputs.build_success == 'true' || steps.build_step_windows.outputs.build_success == 'true'
+      if: steps.build_step.outputs.build_success == 'true'
       uses: actions/upload-artifact@v3
       with:
-        name: ${{ matrix.target.triple }}-binaries
-        path: target/${{ matrix.target.triple }}/release/
+        name: ${{ matrix.os_target.target }}-binaries
+        path: target/${{ matrix.os_target.target }}/release/
 
   release:
     needs: build
@@ -70,15 +70,15 @@ jobs:
     - name: Check if all builds succeeded
       id: check_builds
       run: |
-        unix_success=${{ needs.build.outputs.build_step_unix_ubuntu-latest.build_success }}
-        windows_success=${{ needs.build.outputs.build_step_windows_windows-latest.build_success }}
-        macos_success=${{ needs.build.outputs.build_step_unix_macos-latest.build_success }}
-        
-        if [ "$unix_success" = "true" ] && [ "$windows_success" = "true" ] && [ "$macos_success" = "true" ]; then
-          echo "all_builds_succeeded=true" >> $GITHUB_OUTPUT
-        else
-          echo "all_builds_succeeded=false" >> $GITHUB_OUTPUT
-        fi
+        for build in ${{ toJSON(matrix.os_target) }}; do
+          build_success=${{ needs.build.outputs['build_step_'${build.os}'.build_success'] }}
+          if [ "$build_success" != "true" ]; then
+            echo "Build for ${build.os} failed"
+            echo "all_builds_succeeded=false" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+        done
+        echo "all_builds_succeeded=true" >> $GITHUB_OUTPUT
 
     - name: Download Artifacts
       if: steps.check_builds.outputs.all_builds_succeeded == 'true'
