@@ -58,13 +58,11 @@ jobs:
     - name: Check if all builds succeeded
       id: check_builds
       run: |
-        success_count=0
-        for job in ${{ toJSON(matrix.os) }}; do
-          if [[ ${{ needs.build.outputs['build_step_'${job}'.build_success'] }} == 'true' ]]; then
-            ((success_count++))
-          fi
-        done
-        if [ $success_count -eq 3 ]; then
+        ubuntu_success=${{ needs.build.outputs.build_step_ubuntu-latest.build_success }}
+        windows_success=${{ needs.build.outputs.build_step_windows-latest.build_success }}
+        macos_success=${{ needs.build.outputs.build_step_macos-latest.build_success }}
+        
+        if [ "$ubuntu_success" = "true" ] && [ "$windows_success" = "true" ] && [ "$macos_success" = "true" ]; then
           echo "all_builds_succeeded=true" >> $GITHUB_OUTPUT
         else
           echo "all_builds_succeeded=false" >> $GITHUB_OUTPUT
