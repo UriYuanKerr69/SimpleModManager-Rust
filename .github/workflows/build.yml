@@ -59,7 +59,7 @@ jobs:
       id: check_builds
       run: |
         success_count=0
-        for job in ${{ toJSON(needs.build.matrix.os) }}; do
+        for job in ${{ toJSON(matrix.os) }}; do
           if [[ ${{ needs.build.outputs['build_step_'${job}'.build_success'] }} == 'true' ]]; then
             ((success_count++))
           fi
