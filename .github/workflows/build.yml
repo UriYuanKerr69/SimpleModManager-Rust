@@ -33,7 +33,7 @@ jobs:
         target: ${{ matrix.target.triple }}
 
     - name: Build
-      run: cargo build --release --target ${{ matrix.target.triple }}
+      run: cargo build --release --target ${{ matrix.target.triple }} -vv
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v3
