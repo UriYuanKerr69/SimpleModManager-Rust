@@ -70,15 +70,20 @@ jobs:
     - name: Check if all builds succeeded
       id: check_builds
       run: |
+        all_success=true
         for build in ${{ toJSON(matrix.os_target) }}; do
           build_success=${{ needs.build.outputs['build_step_'${build.os}'.build_success'] }}
           if [ "$build_success" != "true" ]; then
             echo "Build for ${build.os} failed"
-            echo "all_builds_succeeded=false" >> $GITHUB_OUTPUT
-            exit 1
+            all_success=false
+            break
           fi
         done
-        echo "all_builds_succeeded=true" >> $GITHUB_OUTPUT
+        if [ "$all_success" = "true" ]; then
+          echo "all_builds_succeeded=true" >> $GITHUB_OUTPUT
+        else
+          echo "all_builds_succeeded=false" >> $GITHUB_OUTPUT
+        fi
 
     - name: Download Artifacts
       if: steps.check_builds.outputs.all_builds_succeeded == 'true'
