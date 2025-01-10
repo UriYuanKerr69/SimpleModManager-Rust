@@ -23,6 +23,8 @@ jobs:
           - { triple: x86_64-pc-windows-gnu, os: windows-latest }
           - { triple: x86_64-apple-darwin, os: macos-latest }
     runs-on: ${{ matrix.os }}
+    permissions:
+      contents: write  # This gives permission to create releases
 
     steps:
     - name: Checkout repository
@@ -32,7 +34,7 @@ jobs:
       uses: actions-rs/toolchain@v1
       with:
         profile: minimal
-        toolchain: 1.65.0  # Use a specific stable version known to work well
+        toolchain: 1.65.0
         override: true
         target: ${{ matrix.target.triple }}
 
@@ -48,7 +50,6 @@ jobs:
       run: |
         if [ "${{ runner.os }}" = "Windows" ]; then
           echo "Running Windows build..."
-          # Use a bash script to capture errors and log them
           bash -c "cargo build --release --target ${{ matrix.target.triple }} -vv 2>&1 | tee build_log.txt"
           if [ ${PIPESTATUS[0]} -eq 0 ]; then
             echo "build_success=true" >> $GITHUB_OUTPUT
@@ -63,7 +64,7 @@ jobs:
             echo "build_success=false" >> $GITHUB_OUTPUT
           fi
         fi
-      shell: bash  # Use bash for consistency across platforms
+      shell: bash
 
     - name: Upload Artifact
       if: steps.build_step.outputs.build_success == 'true'
