@@ -10,21 +10,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  build_and_artifact:
+  build_and_artifact_ubuntu:
     runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        os:
-          - ubuntu
-          - windows
-          - macos
-        target:
-          - x86_64-unknown-linux-gnu
-          - x86_64-pc-windows-msvc
-          - aarch64-apple-darwin
-          - x86_64-apple-darwin
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -34,35 +21,81 @@ jobs:
         with:
           profile: minimal
           toolchain: stable
+          target: x86_64-unknown-linux-gnu
+          override: true
 
-      - name: Build for Linux
-        if: matrix.os == 'ubuntu' && matrix.target == 'x86_64-unknown-linux-gnu'
-        run: |
-          cargo build --release --target ${{ matrix.target }}
-        shell: bash
-
-      - name: Build for Windows
-        if: matrix.os == 'windows' && matrix.target == 'x86_64-pc-windows-msvc'
-        run: |
-          cargo build --release --target ${{ matrix.target }}
-        shell: bash
-
-      - name: Build for Mac
-        if: matrix.os == 'macos'
-        run: |
-          cargo build --release --target ${{ matrix.target }}
+      - name: Build
+        run: cargo build --release
         shell: bash
 
       - name: Create Artifact
-        if: ${{ success() && matrix.os != 'macos' }}
-        run: |
-          echo "Creating artifact for ${{ matrix.target }}"
-          cp target/${{ matrix.os }}-${{ matrix.target }}/release/SimpleModManager-Rust${{ matrix.target.extension }} SimpleModManager-Rust.${{ matrix.target.extension }}
+        if: ${{ success() && matrix.os == 'ubuntu-latest' && matrix.target == 'x86_64-unknown-linux-gnu' }
+        run: echo "Creating artifact for x86_64-unknown-linux-gnu"
         shell: bash
 
       - name: Upload Artifact
-        if: ${{ success() && matrix.os != 'macos' }}
+        if: ${{ success() && matrix.os == 'ubuntu-latest' && matrix.target == 'x86_64-unknown-linux-gnu' }
         uses: actions/upload-artifact@v3
         with:
-          name: ${{ matrix.target }}-binaries
-          path: SimpleModManager-Rust.${{ matrix.target.extension }}
+          name: linux-binaries
+          path: target/release/SimpleModManager-Rust
+
+  build_and_artifact_windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install Rust and Dependencies
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          target: x86_64-pc-windows-msvc
+          override: true
+
+      - name: Build
+        run: cargo build --release --target x86_64-pc-windows-msvc
+        shell: bash
+
+      - name: Create Artifact
+        if: ${{ success() && matrix.os == 'windows-latest' && matrix.target == 'x86_64-pc-windows-msvc' }
+        run: echo "Creating artifact for x86_64-pc-windows-msvc"
+        shell: bash
+
+      - name: Upload Artifact
+        if: ${{ success() && matrix.os == 'windows-latest' && matrix.target == 'x86_64-pc-windows-msvc' }
+        uses: actions/upload-artifact@v3
+        with:
+          name: windows-binaries
+          path: target/release/SimpleModManager-Rust.exe
+
+  build_and_artifact_macos:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install Rust and Dependencies
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          target: x86_64-apple-darwin
+          override: true
+
+      - name: Build
+        run: cargo build --release
+        shell: bash
+
+      - name: Create Artifact
+        if: ${{ success() && matrix.os == 'macos-latest' && matrix.target == 'x86_64-apple-darwin' }
+        run: echo "Creating artifact for x86_64-apple-darwin"
+        shell: bash
+
+      - name: Upload Artifact
+        if: ${{ success() && matrix.os == 'macos-latest' && matrix.target == 'x86_64-apple-darwin' }
+        uses: actions/upload-artifact@v3
+        with:
+          name: macos-binaries
+          path: target/release/SimpleModManager-Rust
