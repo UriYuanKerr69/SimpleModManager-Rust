@@ -10,17 +10,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  build_and_artifact:
+  build_and_artifact_linux:
     runs-on: ubuntu-latest
-
-    strategy:
-      fail-fast: false
-      matrix:
-        target:
-          - x86_64-unknown-linux-gnu
-          - x86_64-pc-windows-gnu
-          - x86_64-apple-darwin
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -30,27 +21,87 @@ jobs:
         with:
           profile: minimal
           toolchain: stable  # Always use the latest stable version
-          target: ${{ matrix.target }}
+          target: x86_64-unknown-linux-gnu
           override: true
 
       - name: Build
         run: |
-          cargo build --release --target ${{ matrix.target }}
-          if [ "${{ runner.os }}" = "Windows" ]; then
-            mv target/${{ matrix.target }}/release/SimpleModManager-Rust.exe SimpleModManager-Rust${{ matrix.target.extension }}
-          fi
+          cargo build --release --target x86_64-unknown-linux-gnu
+          mv target/x86_64-unknown-linux-gnu/release/SimpleModManager-Rust SimpleModManager-Rust.tar.gz
         shell: bash
 
       - name: Create Artifact
-        if: ${{ success() && matrix.target != 'x86_64-unknown-linux-gnu' }}
         run: |
-          echo "Creating artifact for ${{ matrix.target }}"
-          cp target/${{ matrix.target }}/release/SimpleModManager-Rust${{ matrix.target.extension }} SimpleModManager-Rust.${{ matrix.target.extension }}
+          echo "Creating artifact for Linux"
+          cp target/x86_64-unknown-linux-gnu/release/SimpleModManager-Rust.tar.gz SimpleModManager-Rust.tar.gz
         shell: bash
 
       - name: Upload Artifact
-        if: ${{ success() && matrix.target != 'x86_64-unknown-linux-gnu' }}
         uses: actions/upload-artifact@v3
         with:
-          name: ${{ matrix.target }}-binaries
-          path: SimpleModManager-Rust.${{ matrix.target.extension }}
+          name: linux-binaries
+          path: SimpleModManager-Rust.tar.gz
+
+  build_and_artifact_windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install Rust and Dependencies
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable  # Always use the latest stable version
+          target: x86_64-pc-windows-gnu
+          override: true
+
+      - name: Build
+        run: |
+          cargo build --release --target x86_64-pc-windows-gnu
+          mv target/x86_64-pc-windows-gnu/release/SimpleModManager-Rust.exe SimpleModManager-Rust.zip
+        shell: bash
+
+      - name: Create Artifact
+        run: |
+          echo "Creating artifact for Windows"
+          cp target/x86_64-pc-windows-gnu/release/SimpleModManager-Rust.zip SimpleModManager-Rust.zip
+        shell: bash
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: windows-binaries
+          path: SimpleModManager-Rust.zip
+
+  build_and_artifact_mac:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install Rust and Dependencies
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable  # Always use the latest stable version
+          target: x86_64-apple-darwin
+          override: true
+
+      - name: Build
+        run: |
+          cargo build --release --target x86_64-apple-darwin
+          mv target/x86_64-apple-darwin/release/SimpleModManager-Rust SimpleModManager-Rust.tar.gz
+        shell: bash
+
+      - name: Create Artifact
+        run: |
+          echo "Creating artifact for macOS"
+          cp target/x86_64-apple-darwin/release/SimpleModManager-Rust.tar.gz SimpleModManager-Rust.tar.gz
+        shell: bash
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: mac-binaries
+          path: SimpleModManager-Rust.tar.gz
