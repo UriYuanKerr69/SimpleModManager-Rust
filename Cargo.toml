@@ -3,12 +3,6 @@ name = "SimpleModManager-Rust"
 version = "0.1.0"
 edition = "2021"
 
-[target.'cfg(target_os = "windows")']
-build-dependencies = ["winres"]
-
-[target.'cfg(target_os = "macos")']
-build-dependencies = ["cbindgen"]
-
 [dependencies]
 eframe = { version = "0.22.*", features = ["default-assets", "winit"] }
 egui = { version = "0.22.*", features = ["winit", "serde"] }
@@ -18,5 +12,13 @@ serde_json = "1.0.*"
 sevenz-rust = { version = "0.1.0", features = ["bin_progs"] }
 sha2 = "0.10.*"
 zip = "0.6.*"
+
+# Additional features for Windows
+[target.'cfg(target_os = "windows")]
+build-dependencies = ["winres"]
+
+# Additional features for macOS
+[target.'cfg(target_os = "macos")]
+build-dependencies = ["cbindgen"]
 
 # Additional features can be added here if needed
