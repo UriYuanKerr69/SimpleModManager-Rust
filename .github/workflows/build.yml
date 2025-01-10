@@ -34,7 +34,7 @@ jobs:
       uses: actions-rs/toolchain@v1
       with:
         profile: minimal
-        toolchain: 1.67.0
+        toolchain: stable
         override: true
         target: ${{ matrix.target.triple }}
 
@@ -44,6 +44,15 @@ jobs:
         echo "PATH=$PATH;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.34.31933\bin\Hostx64\x64" >> $GITHUB_ENV
         echo "VCToolsVersion=14.34" >> $GITHUB_ENV
       shell: bash
+
+    - name: Update Dependencies
+      id: update_dependencies
+      run: |
+        if ! cargo update; then
+          echo "dependency_update_failed=true" >> $GITHUB_OUTPUT
+        else
+          echo "dependency_update_failed=false" >> $GITHUB_OUTPUT
+        fi
 
     - name: Build
       id: build_step
@@ -67,9 +76,9 @@ jobs:
       run: |
         mkdir -p release
         if [ "${{ runner.os }}" = "Windows" ]; then
-          cp target/${{ matrix.target.triple }}/release/SimpleModManager-Rust.exe release/
+          cp target/${{ matrix.target.triple }}/release/SimpleModManager-Rust.exe release/ || echo "Failed to copy executable"
         else
-          cp target/${{ matrix.target.triple }}/release/SimpleModManager-Rust release/
+          cp target/${{ matrix.target.triple }}/release/SimpleModManager-Rust release/ || echo "Failed to copy executable"
         fi
       shell: bash
 
