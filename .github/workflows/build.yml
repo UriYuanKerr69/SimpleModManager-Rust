@@ -1,5 +1,4 @@
 name: Build and Release
-
 on:
   push:
     branches:
@@ -8,131 +7,95 @@ on:
     branches:
       - main
   workflow_dispatch:
-
 env:
   CARGO_TERM_COLOR: always  # Enable colored output in cargo
-
 jobs:
   build:
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false  # Do not stop if one job fails
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
         target:
-          - { triple: x86_64-unknown-linux-gnu, os: ubuntu-latest, extension: "" }
-          - { triple: x86_64-pc-windows-gnu, os: windows-latest, extension: ".exe" }
-          - { triple: x86_64-apple-darwin, os: macos-latest, extension: "" }
-    runs-on: ${{ matrix.os }}
-    permissions:
-      contents: write  # This gives permission to create releases
+          - { triple: x86_64-unknown-linux-gnu, extension: "" }
+          - { triple: x86_64-pc-windows-gnu, extension: ".exe" }
+          - { triple: x86_64-apple-darwin, extension: "" }
+permissions:
+  contents: write  # This gives permission to create releases
 
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
+steps:
+- name: Checkout repository
+  uses: actions/checkout@v3
 
-    - name: Install Rust
-      uses: actions-rs/toolchain@v1
-      with:
-        profile: minimal
-        toolchain: stable  # Always use the latest stable version
-        override: true
-        target: ${{ matrix.target.triple }}
+- name: Install Rust
+  uses: actions-rs/toolchain@v1
+  with:
+    profile: minimal
+    toolchain: stable  # Always use the latest stable version
+    override: true
+    target: ${{ matrix.target.triple }}
 
-    - name: Set Environment Variables (Windows)
-      if: runner.os == 'Windows'
-      run: |
-        echo "PATH=$PATH;C:\Program Files (x86)\Microsoft Visual Studio\Shared\Tools\MSVC\Latest\bin\Hostx64\x64" >> $GITHUB_ENV
-        echo "VCToolsVersion=14.34" >> $GITHUB_ENV  # Generic version, update if needed
-      shell: bash
+- name: Install System Dependencies
+  if: runner.os == 'Linux' || runner.os == 'macOS'
+  run: |
+    if [ "${{ runner.os }}" == "Linux" ]; then
+      sudo apt-get update
+      sudo apt-get install -y libatk1.0-dev pkg-config;
+    elif [ "${{ runner.os }}" == "macOS" ]; then
+      brew update
+      brew install atk pkg-config;
+    fi
+  shell: bash
 
-    - name: Install System Dependencies (Linux)
-      if: runner.os == 'Linux'
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y libatk1.0-dev pkg-config gcc-mingw-w64-x86-64 g++-mingw-w64-x86-64
-      shell: bash
+- name: Build
+  id: build_step
+  run: |
+    cargo build --release --target ${{ matrix.target.triple }} -vv
+    echo "build_success=$?" >> $GITHUB_OUTPUT
+  shell: bash
 
-    - name: Install System Dependencies (macOS)
-      if: runner.os == 'macOS'
-      run: |
-        brew update
-        brew install atk pkg-config
-      shell: bash
+- name: Prepare Executable for Release
+  if: steps.build_step.outputs.build_success == 'true'
+  run: |
+    mkdir -p release
+    cp target/${{ matrix.target.triple }}/release/SimpleModManager-Rust${{ matrix.target.extension }} release/ || echo "Failed to copy executable"
+  shell: bash
 
-    - name: Set Cross Compilation Environment (Linux for Windows)
-      if: runner.os == 'Linux' && matrix.target.triple == 'x86_64-pc-windows-gnu'
-      run: |
-        echo "CC_x86_64_pc_windows_gnu=x86_64-w64-mingw32-gcc" >> $GITHUB_ENV
-        echo "CXX_x86_64_pc_windows_gnu=x86_64-w64-mingw32-g++" >> $GITHUB_ENV
-        echo "CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER=x86_64-w64-mingw32-gcc" >> $GITHUB_ENV
-      shell: bash
+- name: Upload Artifact
+  if: steps.build_step.outputs.build_success == 'true'
+  uses: actions/upload-artifact@v3
+  with:
+    name: ${{ matrix.target.triple }}-binaries
+    path: release/
 
-    - name: Update Dependencies
-      run: |
-        cargo update
+- name: Generate Unique Tag
+  if: steps.build_step.outputs.build_success == 'true'
+  id: generate_tag
+  run: |
+    echo "unique_tag=${{ github.sha }}-${{ runner.os }}-$(date +%s)" >> $GITHUB_OUTPUT
+  shell: bash
 
-    - name: Build
-      id: build_step
-      run: |
-        if [ "${{ runner.os }}" = "Windows" ]; then
-          echo "Running Windows build..."
-          bash -c "cargo build --release --target ${{ matrix.target.triple }} -vv 2>&1 | tee build_log.txt"
-          exit_code=$?
-          echo "build_success=$([ $exit_code -eq 0 ] && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
-          if [ $exit_code -ne 0 ]; then
-            cat build_log.txt
-          fi
-        else
-          cargo build --release --target ${{ matrix.target.triple }} -vv
-          echo "build_success=$?" >> $GITHUB_OUTPUT
-        fi
-      shell: bash
+- name: Create Pre-Release
+  if: steps.build_step.outputs.build_success == 'true'
+  uses: actions/create-release@v1
+  env:
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  with:
+    tag_name: ${{ steps.generate_tag.outputs.unique_tag }}
+    release_name: Pre-Release ${{ github.sha }} on ${{ runner.os }}
+    body: |
+      Pre-release build for ${{ matrix.target.triple }} on ${{ runner.os }}
+    draft: false
+    prerelease: true
 
-    - name: Prepare Executable for Release
-      if: steps.build_step.outputs.build_success == 'true'
-      run: |
-        mkdir -p release
-        if [ "${{ runner.os }}" = "Windows" ]; then
-          cp target/${{ matrix.target.triple }}/release/SimpleModManager-Rust.exe release/ || echo "Failed to copy executable"
-        else
-          cp target/${{ matrix.target.triple }}/release/SimpleModManager-Rust release/ || echo "Failed to copy executable"
-        fi
-      shell: bash
+- name: Upload Release Asset
+  if: steps.build_step.outputs.build_success == 'true'
+  uses: actions/upload-release-asset@v1
+  env:
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  with:
+    upload_url: ${{ steps.create_pre_release.outputs.upload_url }}
+    asset_path: release/SimpleModManager-Rust${{ matrix.target.extension }}
+    asset_name: SimpleModManager-Rust-${{ matrix.target.triple }}${{ matrix.target.extension }}
+    asset_content_type: application/octet-stream
 
-    - name: Upload Artifact
-      if: steps.build_step.outputs.build_success == 'true'
-      uses: actions/upload-artifact@v3
-      with:
-        name: ${{ matrix.target.triple }}-binaries
-        path: release/
-
-    - name: Generate Unique Tag
-      if: steps.build_step.outputs.build_success == 'true'
-      id: generate_tag
-      run: |
-        echo "unique_tag=${{ github.sha }}-${{ matrix.os }}-$(date +%s)" >> $GITHUB_OUTPUT
-      shell: bash
-
-    - name: Create Pre-Release
-      if: steps.build_step.outputs.build_success == 'true'
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: ${{ steps.generate_tag.outputs.unique_tag }}
-        release_name: Pre-Release ${{ github.sha }} on ${{ matrix.os }}
-        body: |
-          Pre-release build for ${{ matrix.target.triple }} on ${{ matrix.os }}
-        draft: false
-        prerelease: true
-
-    - name: Upload Release Asset
-      if: steps.build_step.outputs.build_success == 'true'
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_pre_release.outputs.upload_url }}
-        asset_path: release/SimpleModManager-Rust${{ matrix.target.extension }}
-        asset_name: SimpleModManager-Rust-${{ matrix.target.triple }}${{ matrix.target.extension }}
-        asset_content_type: application/octet-stream
