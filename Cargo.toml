@@ -1,36 +1,27 @@
 [package]
 name = "SimpleModManager-Rust"
-version = "0.0.1"
-edition = "2021"  # Using the latest stable edition
-license = "MIT OR Apache-2.0"
-authors = ["Uri-Yuan Kerr <uriyuankerr@outlook.com>"]
+version = "0.1.0"
+edition = "2021"
 
 [dependencies]
-zip = "^0.6"
-sevenz-rust = "^0.1"  # Check for API changes or crate updates
-sha2 = "^0.10"
-eframe = "^0.22"
-egui = "^0.22"
-rfd = "^0.11"
-serde = { version = "^1.0", features = ["derive"] }
-serde_json = "^1.0"
+# Use caret (^) for semantic versioning which allows auto-updates to patch releases
+eframe = "^0.22.0"
+egui = "^0.22.0"
+rfd = "^0.11.3"
+serde = { version = "^1.0.160", features = ["derive"] }
+serde_json = "^1.0.96"
+sevenz-rust = "^0.1.0"
+sha2 = "^0.10.6"
+zip = "^0.6.4"
+
+# Profile for release builds
+[profile.release]
+opt-level = 'z'  # Optimize for size
+lto = true       # Link Time Optimization
+codegen-units = 1  # Increase compilation time but reduces binary size
+strip = true     # Strip symbols from binary
 
 [features]
 default = []
-cargo-clippy = []
 
-[profile.release]
-strip = true  # Strip symbols from binary for smaller size
-lto = true    # Link Time Optimization for better performance
-
-# For Linux-specific dependencies
-[target.'cfg(target_os = "linux")'.dependencies]
-atk-sys = "0.16"  # For handling ATK library on Linux
-
-# For Windows-specific dependencies, if any
-#[target.'cfg(windows)'.dependencies]
-# Add any Windows-specific dependencies here
-
-# For macOS-specific dependencies, if any
-#[target.'cfg(target_os = "macos")'.dependencies]
-# Add any macOS-specific dependencies here
+# Additional features can be added here if needed
