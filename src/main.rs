@@ -2,10 +2,16 @@ use std::fs;
 use std::io::{self, Read};
 use std::path::{Path, PathBuf};
 use zip::ZipArchive;
-use sevenz_rust::{SevenZArchive, SevenZReader}; // Ensure these are correct
+use sevenz_rust::{SevenZArchive, SevenZReader}; // Ensure these are correct for the latest version
 use sha2::{Sha256, Digest};
 use eframe::egui;
 use eframe::App;
+use serde::{Deserialize, Serialize};
+
+#[derive(Deserialize, Serialize, Default)]
+struct Config {
+    // Add any configuration fields here
+}
 
 struct ModManagerApp {
     config: Config,
@@ -25,7 +31,7 @@ impl App for ModManagerApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.heading("Mod Manager");
-            ui.label("Your mod manager GUI here");
+            ui.label("SimpleModManager-Rust for Balatro");
         });
     }
 }
@@ -98,7 +104,7 @@ impl ModManagerApp {
     }
 }
 
-fn main() {
+fn main() -> Result<(), eframe::Error> {
     let options = eframe::NativeOptions {
         initial_window_size: Some(egui::vec2(320.0, 240.0)),
         ..Default::default()
@@ -107,5 +113,5 @@ fn main() {
         "Mod Manager",
         options,
         Box::new(|cc| Box::new(ModManagerApp::new(cc))),
-    ).unwrap();
+    )
 }
