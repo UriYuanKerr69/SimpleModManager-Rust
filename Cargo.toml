@@ -3,16 +3,23 @@ name = "SimpleModManager-Rust"
 version = "0.1.0"
 edition = "2021"
 
+# Add the required target architectures
+[target.'cfg(target_os = "windows")']
+build-dependencies = ["winres"]
+
+[target.'cfg(target_os = "macos")']
+build-dependencies = ["cbindgen"]
+
+# Dependencies for all targets
 [dependencies]
-# Use caret (^) for semantic versioning which allows auto-updates to patch releases
-eframe = "^0.22.0"
-egui = "^0.22.0"
-rfd = "^0.11.3"
-serde = { version = "^1.0.160", features = ["derive"] }
-serde_json = "^1.0.96"
-sevenz-rust = "^0.1.0"
-sha2 = "^0.10.6"
-zip = "^0.6.4"
+eframe = { version = "0.22.0", features = ["default-assets", "winit"] }
+egui = { version = "0.22.0", features = ["winit", "serde"] }
+rfd = "0.11.3"
+serde = { version = "1.0.160", features = ["derive"] }
+serde_json = "1.0.96"
+sevenz-rust = { version = "0.1.0", features = ["bin_progs"] }
+sha2 = "0.10.6"
+zip = "0.6.4"
 
 # Profile for release builds
 [profile.release]
@@ -20,8 +27,3 @@ opt-level = 'z'  # Optimize for size
 lto = true       # Link Time Optimization
 codegen-units = 1  # Increase compilation time but reduces binary size
 strip = true     # Strip symbols from binary
-
-[features]
-default = []
-
-# Additional features can be added here if needed
