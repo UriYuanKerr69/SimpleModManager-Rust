@@ -9,63 +9,48 @@ on:
       - main
   workflow_dispatch:
 
-env:
-  CARGO_TERM_COLOR: always  # Enable colored output in cargo
-
 jobs:
   build_and_artifact:
+    runs-on: ubuntu-latest
+
     strategy:
-      fail-fast: false  # Do not stop if one job fails
+      fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
         target:
-          - { triple: x86_64-unknown-linux-gnu }
-          - { triple: x86_64-pc-windows-gnu, extension: ".exe" }
-          - { triple: x86_64-apple-darwin }
-    runs-on: ${{ matrix.os }}
+          - x86_64-unknown-linux-gnu
+          - x86_64-pc-windows-gnu
+          - x86_64-apple-darwin
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Install Rust
+      - name: Install Rust and Dependencies
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
           toolchain: stable  # Always use the latest stable version
-          target: ${{ matrix.target.triple }}
+          target: ${{ matrix.target }}
           override: true
-
-      - name: Install System Dependencies (Ubuntu)
-        if: runner.os == 'Ubuntu'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libatk1.0-dev pkg-config
-
-      - name: Install System Dependencies (macOS)
-        if: runner.os == 'macOS'
-        run: |
-          brew update
-          brew install atk pkg-config
 
       - name: Build
         run: |
-          cargo build --release --target ${{ matrix.target.triple }}
+          cargo build --release --target ${{ matrix.target }}
           if [ "${{ runner.os }}" = "Windows" ]; then
-            mv target/${{ matrix.target.triple }}/release/SimpleModManager-Rust.exe SimpleModManager-Rust${{ matrix.target.extension }}
+            mv target/${{ matrix.target }}/release/SimpleModManager-Rust.exe SimpleModManager-Rust${{ matrix.target.extension }}
           fi
         shell: bash
 
       - name: Create Artifact
-        if: ${{ success() && matrix.target.triple != 'x86_64-unknown-linux-gnu' }}
+        if: ${{ success() && matrix.target != 'x86_64-unknown-linux-gnu' }}
         run: |
-          echo "Creating artifact for ${{ matrix.target.triple }}"
-          cp target/${{ matrix.target.triple }}/release/SimpleModManager-Rust${{ matrix.target.extension }} SimpleModManager-Rust.${{ matrix.target.extension }}
+          echo "Creating artifact for ${{ matrix.target }}"
+          cp target/${{ matrix.target }}/release/SimpleModManager-Rust${{ matrix.target.extension }} SimpleModManager-Rust.${{ matrix.target.extension }}
         shell: bash
 
       - name: Upload Artifact
+        if: ${{ success() && matrix.target != 'x86_64-unknown-linux-gnu' }}
         uses: actions/upload-artifact@v3
-        if: ${{ success() && matrix.target.triple != 'x86_64-unknown-linux-gnu' }}
         with:
-          name: ${{ matrix.target.triple }}-binaries
+          name: ${{ matrix.target }}-binaries
           path: SimpleModManager-Rust.${{ matrix.target.extension }}
