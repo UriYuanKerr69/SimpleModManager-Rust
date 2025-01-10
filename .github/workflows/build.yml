@@ -10,33 +10,33 @@ on:
   workflow_dispatch:
 
 jobs:
-  build_and_artifact:
+  build_artifacts:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
         target: [x86_64-unknown-linux-gnu, x86_64-apple-darwin, x86_64-pc-windows-msvc]
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-    - name: Install Rust and Dependencies
-      uses: actions-rs/toolchain@v2
-      with:
-        toolchain: stable
+      - name: Install Rust and Dependencies
+        uses: actions-rs/toolchain@v2
+        with:
+          toolchain: stable
 
-    - name: Build for ${{ matrix.os }}/${{ matrix.target }}
-      run: cargo build --release --target ${{ matrix.target }}
-      shell: bash
+      - name: Build for ${{ matrix.os }}, ${{ matrix.target }}
+        run: cargo build --release --target ${{ matrix.target }}
+        shell: bash
 
-    - name: Create Artifact
-      if: ${{ success() && matrix.os == 'ubuntu-latest' && matrix.target == 'x86_64-unknown-linux-gnu' || matrix.os == 'macos-latest' && matrix.target == 'x86_64-apple-darwin' || matrix.os == 'windows-latest' && matrix.target == 'x86_64-pc-windows-msvc' }
-      run: echo "Creating artifact for ${{ matrix.target }}"
-      shell: bash
+      - name: Create Artifact
+        if: ${{ success() && matrix.os == runner.os && matrix.target == runner.arch }}"
+        run: echo "Creating artifact for ${{ matrix.target }}"
+        shell: bash
 
-    - name: Upload Artifact
-      if: ${{ success() && matrix.os == 'ubuntu-latest' && matrix.target == 'x86_64-unknown-linux-gnu' || matrix.os == 'macos-latest' && matrix.target == 'x86_64-apple-darwin' || matrix.os == 'windows-latest' && matrix.target == 'x86_64-pc-windows-msvc' }
-      uses: actions/upload-artifact@v3
-      with:
-        name: ${{ matrix.os }}-binaries
-        path: target/release/SimpleModManager-Rust
+      - name: Upload Artifact
+        if: ${{ success() && matrix.os == runner.os && matrix.target == runner.arch }}"
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.os }}-binaries
+          path: target/release/SimpleModManager-Rust
