@@ -1,4 +1,4 @@
-name: Build and Release
+
 on:
   push:
     branches:
@@ -7,95 +7,87 @@ on:
     branches:
       - main
   workflow_dispatch:
+
 env:
   CARGO_TERM_COLOR: always  # Enable colored output in cargo
+
 jobs:
-  build:
-    runs-on: ${{ matrix.os }}
+  build_and_artifact:
     strategy:
       fail-fast: false  # Do not stop if one job fails
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
         target:
-          - { triple: x86_64-unknown-linux-gnu, extension: "" }
+          - { triple: x86_64-unknown-linux-gnu }
           - { triple: x86_64-pc-windows-gnu, extension: ".exe" }
-          - { triple: x86_64-apple-darwin, extension: "" }
-permissions:
-  contents: write  # This gives permission to create releases
+          - { triple: x86_64-apple-darwin }
+    runs-on: ${{ matrix.os }}
 
-steps:
-- name: Checkout repository
-  uses: actions/checkout@v3
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
 
-- name: Install Rust
-  uses: actions-rs/toolchain@v1
-  with:
-    profile: minimal
-    toolchain: stable  # Always use the latest stable version
-    override: true
-    target: ${{ matrix.target.triple }}
+    - name: Install Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: stable  # Always use the latest stable version
+        target: ${{ matrix.target.triple }}
+        override: true
 
-- name: Install System Dependencies
-  if: runner.os == 'Linux' || runner.os == 'macOS'
-  run: |
-    if [ "${{ runner.os }}" == "Linux" ]; then
-      sudo apt-get update
-      sudo apt-get install -y libatk1.0-dev pkg-config;
-    elif [ "${{ runner.os }}" == "macOS" ]; then
-      brew update
-      brew install atk pkg-config;
-    fi
-  shell: bash
+    - name: Install System Dependencies (Ubuntu)
+      if: runner.os == 'Ubuntu'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libatk1.0-dev pkg-config
+        if [ "${{ matrix.target.triple }}" = "x86_64-pc-windows-gnu" ]; then
+          sudo apt-get install -y mingw-w64 mingw-w64-x86-64-g++ mingw-w64-x86-64-binutils mingw-w64-tools
+        fi
+      shell: bash
 
-- name: Build
-  id: build_step
-  run: |
-    cargo build --release --target ${{ matrix.target.triple }} -vv
-    echo "build_success=$?" >> $GITHUB_OUTPUT
-  shell: bash
+    - name: Install System Dependencies (macOS)
+      if: runner.os == 'macOS'
+      run: |
+        brew update
+        brew install atk pkg-config
+      shell: bash
 
-- name: Prepare Executable for Release
-  if: steps.build_step.outputs.build_success == 'true'
-  run: |
-    mkdir -p release
-    cp target/${{ matrix.target.triple }}/release/SimpleModManager-Rust${{ matrix.target.extension }} release/ || echo "Failed to copy executable"
-  shell: bash
+    - name: Set Environment Variables
+      run: |
+        if [ "${{ runner.os }}" = "Windows" ]; then
+          echo "PATH=$PATH;C:\Program Files\Rust\bin" >> $GITHUB_PATH
+          echo "CARGO_TARGET_DIR=$PWD/target" >> $GITHUB_ENV
+          echo "CARGO_TARGET_X86_64_PC_WINDOWS_GNU=$PWD/target/release" >> $GITHUB_ENV
+          echo "CROSS_TARGET=${{ matrix.target.triple }}" >> $GITHUB_ENV
+          echo "CROSS_TASK=build" >> $GITHUB_ENV
+        else
+          echo "CROSS_TASK=" >> $GITHUB_ENV
+        fi
+      shell: bash
 
-- name: Upload Artifact
-  if: steps.build_step.outputs.build_success == 'true'
-  uses: actions/upload-artifact@v3
-  with:
-    name: ${{ matrix.target.triple }}-binaries
-    path: release/
+    - name: Build
+      run: |
+        if [ "${{ runner.os }}" = "Windows" ]; then
+          echo "Running Windows build..."
+          bash -c "cargo build --release --target ${{ matrix.target.triple }}"
+        else
+          cargo build --release --target ${{ matrix.target.triple }}
+        fi
+      shell: bash
 
-- name: Generate Unique Tag
-  if: steps.build_step.outputs.build_success == 'true'
-  id: generate_tag
-  run: |
-    echo "unique_tag=${{ github.sha }}-${{ runner.os }}-$(date +%s)" >> $GITHUB_OUTPUT
-  shell: bash
+    - name: Create Artifact
+      if: ${{ success() && matrix.target.triple != 'x86_64-unknown-linux-gnu' }}
+      run: |
+        if [ "${{ runner.os }}" = "Windows" ]; then
+          cp target/${{ matrix.target.triple }}/release/SimpleModManager-Rust.exe SimpleModManager-Rust${{ matrix.target.extension }}
+        else
+          cp target/${{ matrix.target.triple }}/release/SimpleModManager-Rust SimpleModManager-Rust
+        fi
+      shell: bash
 
-- name: Create Pre-Release
-  if: steps.build_step.outputs.build_success == 'true'
-  uses: actions/create-release@v1
-  env:
-    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  with:
-    tag_name: ${{ steps.generate_tag.outputs.unique_tag }}
-    release_name: Pre-Release ${{ github.sha }} on ${{ runner.os }}
-    body: |
-      Pre-release build for ${{ matrix.target.triple }} on ${{ runner.os }}
-    draft: false
-    prerelease: true
-
-- name: Upload Release Asset
-  if: steps.build_step.outputs.build_success == 'true'
-  uses: actions/upload-release-asset@v1
-  env:
-    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  with:
-    upload_url: ${{ steps.create_pre_release.outputs.upload_url }}
-    asset_path: release/SimpleModManager-Rust${{ matrix.target.extension }}
-    asset_name: SimpleModManager-Rust-${{ matrix.target.triple }}${{ matrix.target.extension }}
-    asset_content_type: application/octet-stream
-
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v3
+      if: ${{ success() && matrix.target.triple != 'x86_unknown-linux-gnu' }}
+      with:
+        name: ${{ matrix.target.triple }}-binaries
+        path: SimpleModManager-Rust${{ matrix.target.extension }}
