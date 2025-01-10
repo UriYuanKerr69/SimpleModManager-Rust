@@ -16,6 +16,8 @@ jobs:
         os: [ubuntu-latest, macos-latest, windows-latest]
         target: [x86_64-unknown-linux-gnu, x86_64-apple-darwin, x86_64-pc-windows-msvc]
 
+    runs-on: ${{ matrix.os }}
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -30,12 +32,12 @@ jobs:
         shell: bash
 
       - name: Create Artifact
-        if: ${{ success() && matrix.os == runner.os && matrix.target == runner.arch }}"
+        if: ${{ success() && matrix.os == runner.os && matrix.target == runner.arch }}
         run: echo "Creating artifact for ${{ matrix.target }}"
         shell: bash
 
       - name: Upload Artifact
-        if: ${{ success() && matrix.os == runner.os && matrix.target == runner.arch }}"
+        if: ${{ success() && matrix.os == runner.os && matrix.target == runner.arch }}
         uses: actions/upload-artifact@v3
         with:
           name: ${{ matrix.os }}-binaries
