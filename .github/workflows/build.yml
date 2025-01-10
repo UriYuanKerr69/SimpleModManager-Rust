@@ -45,14 +45,16 @@ jobs:
         echo "VCToolsVersion=14.34" >> $GITHUB_ENV
       shell: bash
 
-    - name: Update Dependencies
-      id: update_dependencies
+    - name: Install System Dependencies (Linux)
+      if: runner.os == 'Linux'
       run: |
-        if ! cargo update; then
-          echo "dependency_update_failed=true" >> $GITHUB_OUTPUT
-        else
-          echo "dependency_update_failed=false" >> $GITHUB_OUTPUT
-        fi
+        sudo apt-get update
+        sudo apt-get install -y libatk1.0-dev
+      shell: bash
+
+    - name: Update Dependencies
+      run: |
+        cargo update
 
     - name: Build
       id: build_step
