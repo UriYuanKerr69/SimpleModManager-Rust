@@ -34,7 +34,7 @@ jobs:
       uses: actions-rs/toolchain@v1
       with:
         profile: minimal
-        toolchain: 1.67.0  # Updated to 1.67.0
+        toolchain: 1.67.0
         override: true
         target: ${{ matrix.target.triple }}
 
@@ -51,7 +51,7 @@ jobs:
         if [ "${{ runner.os }}" = "Windows" ]; then
           echo "Running Windows build..."
           bash -c "cargo build --release --target ${{ matrix.target.triple }} -vv 2>&1 | tee build_log.txt"
-          if [ ${PIPESTATUS[0]} -eq 0 ]; then
+          if [ $? -eq 0 ]; then
             echo "build_success=true" >> $GITHUB_OUTPUT
           else
             echo "build_success=false" >> $GITHUB_OUTPUT
@@ -73,13 +73,20 @@ jobs:
         name: ${{ matrix.target.triple }}-binaries
         path: target/${{ matrix.target.triple }}/release/
 
+    - name: Generate Unique Tag
+      if: steps.build_step.outputs.build_success == 'true'
+      id: generate_tag
+      run: |
+        echo "unique_tag=${{ github.sha }}-${{ matrix.os }}-$(date +%s)" >> $GITHUB_OUTPUT
+      shell: bash
+
     - name: Create Pre-Release
       if: steps.build_step.outputs.build_success == 'true'
       uses: actions/create-release@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: ${{ github.sha }}-${{ matrix.os }}-${{ github.run_number }}
+        tag_name: ${{ steps.generate_tag.outputs.unique_tag }}
         release_name: Pre-Release ${{ github.sha }} on ${{ matrix.os }}
         body: |
           Pre-release build for ${{ matrix.target.triple }} on ${{ matrix.os }}
@@ -100,11 +107,12 @@ jobs:
         windows_success=${{ needs.build.outputs.build_step_windows-latest.build_success }}
         macos_success=${{ needs.build.outputs.build_step_macos-latest.build_success }}
         
-        if [ "$ubuntu_success" = "true" ] && [ "$windows_success" = "true" ] && [ "$macos_success" = "true" ]; then
+        if [ "$ubuntu_success" == "true" ] && [ "$windows_success" == "true" ] && [ "$macos_success" == "true" ]; then
           echo "all_builds_succeeded=true" >> $GITHUB_OUTPUT
         else
           echo "all_builds_succeeded=false" >> $GITHUB_OUTPUT
         fi
+      shell: bash
 
     - name: Download Artifacts
       if: steps.check_builds.outputs.all_builds_succeeded == 'true'
