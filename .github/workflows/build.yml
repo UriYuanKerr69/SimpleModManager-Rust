@@ -22,10 +22,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Install Rust and Dependencies
-        uses: actions-rs/toolchain@v2
+      - name: Install Rust
+        uses: rust-lang/rust@main
         with:
-          toolchain: stable
+          rust-version: 'nightly'
 
       - name: Build for ${{ matrix.os }}, ${{ matrix.target }}
         run: cargo build --release --target ${{ matrix.target }}
