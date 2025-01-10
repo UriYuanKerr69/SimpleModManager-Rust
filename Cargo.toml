@@ -3,9 +3,10 @@ name = "SimpleModManager-Rust"
 version = "0.1.0"
 edition = "2021"
 
-[target.'cfg(target_os = "windows")]
+[target.'cfg(target_os = "windows")']
 build-dependencies = ["winres"]
-[target.'cfg(target_os = "macos")]
+
+[target.'cfg(target_os = "macos")']
 build-dependencies = ["cbindgen"]
 
 [dependencies]
