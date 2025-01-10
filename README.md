@@ -1,6 +1,8 @@
 # Mod Manager
 
-A simple tool to manage and install mods from various archive formats.
+A simple tool to manage and install mods from various archive formats. This tool has been created using Rust, and I legally am not responsible for any damage caused using this tool.
+
+I am also a very new developer with very little experience (Grok is my friend), and therefore I am greatful for any help and support to build this free resource for use with any game which uses '.zip' and/or '.7z' archives, while remembering the output destination for future reference. I initially created this to assist new mod users to install mods into Balatro.
 
 ## Features
 - Install mods from `.zip` and `.7z` archives.
