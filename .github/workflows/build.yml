@@ -70,7 +70,6 @@ jobs:
     - name: Update Dependencies
       run: |
         cargo update
-      shell: bash
 
     - name: Build
       id: build_step
@@ -135,5 +134,5 @@ jobs:
       with:
         upload_url: ${{ steps.create_pre_release.outputs.upload_url }}
         asset_path: release/SimpleModManager-Rust${{ matrix.target.extension }}
-        asset_name: SimpleModManager-Rust${{ matrix.target.triple }}${{ matrix.target.extension }}
+        asset_name: SimpleModManager-Rust-${{ matrix.target.triple }}${{ matrix.target.extension }}
         asset_content_type: application/octet-stream
