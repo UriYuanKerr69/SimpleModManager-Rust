@@ -40,11 +40,13 @@ jobs:
       id: build_step
       run: |
         if [ "${{ runner.os }}" = "Windows" ]; then
-          if (cargo build --release --target ${{ matrix.target.triple }}) {
-            echo "build_success=true" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
-          } else {
-            echo "build_success=false" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
-          }
+          cargo_build=$(cargo build --release --target ${{ matrix.target.triple }} 2>&1)
+          if [ $? -eq 0 ]; then
+            echo "build_success=true" >> $GITHUB_OUTPUT
+          else
+            echo "build_success=false" >> $GITHUB_OUTPUT
+            echo "$cargo_build"
+          fi
         else
           if cargo build --release --target ${{ matrix.target.triple }}; then
             echo "build_success=true" >> $GITHUB_OUTPUT
