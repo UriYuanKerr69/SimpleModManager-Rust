@@ -14,12 +14,16 @@ jobs:
     runs-on: ubuntu-latest
 
     strategy:
-      fail-fast: false
       matrix:
         os:
-          - ubuntu-latest
-          - windows-latest
-          - macos-latest
+          - ubuntu
+          - windows
+          - macos
+        target:
+          - x86_64-unknown-linux-gnu
+          - x86_64-pc-windows-msvc
+          - aarch64-apple-darwin
+          - x86_64-apple-darwin
 
     steps:
       - name: Checkout repository
@@ -30,23 +34,34 @@ jobs:
         with:
           profile: minimal
           toolchain: stable
-          target: ${{ matrix.os }}-${{ matrix.target }}
-          override: true
 
-      - name: Build
+      - name: Build for Linux
+        if: matrix.os == 'ubuntu' && matrix.target == 'x86_64-unknown-linux-gnu'
         run: |
-          cargo build --release --target ${{ matrix.os }}-${{ matrix.target }}
+          cargo build --release --target ${{ matrix.target }}
+        shell: bash
+
+      - name: Build for Windows
+        if: matrix.os == 'windows' && matrix.target == 'x86_64-pc-windows-msvc'
+        run: |
+          cargo build --release --target ${{ matrix.target }}
+        shell: bash
+
+      - name: Build for Mac
+        if: matrix.os == 'macos'
+        run: |
+          cargo build --release --target ${{ matrix.target }}
         shell: bash
 
       - name: Create Artifact
-        if: ${{ success() && matrix.os != 'macos-latest' }}
+        if: ${{ success() && matrix.os != 'macos' }}
         run: |
           echo "Creating artifact for ${{ matrix.target }}"
           cp target/${{ matrix.os }}-${{ matrix.target }}/release/SimpleModManager-Rust${{ matrix.target.extension }} SimpleModManager-Rust.${{ matrix.target.extension }}
         shell: bash
 
       - name: Upload Artifact
-        if: ${{ success() && matrix.os != 'macos-latest' }}
+        if: ${{ success() && matrix.os != 'macos' }}
         uses: actions/upload-artifact@v3
         with:
           name: ${{ matrix.target }}-binaries
