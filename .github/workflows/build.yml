@@ -32,7 +32,7 @@ jobs:
       uses: actions-rs/toolchain@v1
       with:
         profile: minimal
-        toolchain: stable
+        toolchain: 1.65.0  # Use a specific stable version known to work well
         override: true
         target: ${{ matrix.target.triple }}
 
@@ -40,22 +40,23 @@ jobs:
       if: runner.os == 'Windows'
       run: |
         echo "PATH=$PATH;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.34.31933\bin\Hostx64\x64" >> $GITHUB_ENV
+        echo "VCToolsVersion=14.34" >> $GITHUB_ENV
       shell: bash
 
     - name: Build
       id: build_step
       run: |
         if [ "${{ runner.os }}" = "Windows" ]; then
-          # Use -vv for very verbose output on Windows to capture detailed errors
-          cargo_build=$(cargo build --release --target ${{ matrix.target.triple }} -vv 2>&1)
-          if [ $? -eq 0 ]; then
+          echo "Running Windows build..."
+          # Use a bash script to capture errors and log them
+          bash -c "cargo build --release --target ${{ matrix.target.triple }} -vv 2>&1 | tee build_log.txt"
+          if [ ${PIPESTATUS[0]} -eq 0 ]; then
             echo "build_success=true" >> $GITHUB_OUTPUT
           else
             echo "build_success=false" >> $GITHUB_OUTPUT
-            echo "$cargo_build"  # Print the full error message
+            cat build_log.txt
           fi
         else
-          # Use -vv for very verbose output on other platforms as well
           if cargo build --release --target ${{ matrix.target.triple }} -vv; then
             echo "build_success=true" >> $GITHUB_OUTPUT
           else
@@ -77,10 +78,10 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: ${{ github.sha }}  # Use commit SHA as tag for pre-release
-        release_name: Pre-Release ${{ github.sha }}
+        tag_name: ${{ github.sha }}-${{ matrix.os }}
+        release_name: Pre-Release ${{ github.sha }} on ${{ matrix.os }}
         body: |
-          Pre-release build for ${{ matrix.target.triple }}
+          Pre-release build for ${{ matrix.target.triple }} on ${{ matrix.os }}
         draft: false
         prerelease: true
 
