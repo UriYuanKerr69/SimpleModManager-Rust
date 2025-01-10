@@ -1,19 +1,23 @@
 [package]
 name = "SimpleModManager-Rust"
 version = "0.0.1"
-edition = "2021"
+edition = "2025"
 license = "MIT OR Apache-2.0"
 authors = ["Uri-Yuan Kerr <uriyuankerr@outlook.com>"]
 
 [dependencies]
 zip = "^0.6"
-sevenz-rust = "^0.1"
+sevenz-rust = "^0.1"  # Note: Check if this crate has changed its API or namespace
 sha2 = "^0.10"
 eframe = "^0.22"
 egui = "^0.22"
 rfd = "^0.11"
 serde = { version = "^1.0", features = ["derive"] }
 serde_json = "^1.0"
+
+[features]
+default = []
+cargo-clippy = []
 
 [profile.release]
 strip = true  # Strip symbols from binary for smaller size
