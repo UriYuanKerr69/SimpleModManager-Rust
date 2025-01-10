@@ -34,7 +34,7 @@ jobs:
       uses: actions-rs/toolchain@v1
       with:
         profile: minimal
-        toolchain: 1.65.0
+        toolchain: 1.67.0  # Updated to 1.67.0
         override: true
         target: ${{ matrix.target.triple }}
 
@@ -79,7 +79,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: ${{ github.sha }}-${{ matrix.os }}
+        tag_name: ${{ github.sha }}-${{ matrix.os }}-${{ github.run_number }}
         release_name: Pre-Release ${{ github.sha }} on ${{ matrix.os }}
         body: |
           Pre-release build for ${{ matrix.target.triple }} on ${{ matrix.os }}
