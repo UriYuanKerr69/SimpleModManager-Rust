@@ -19,9 +19,9 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
         target:
-          - { triple: x86_64-unknown-linux-gnu, os: ubuntu-latest }
-          - { triple: x86_64-pc-windows-gnu, os: windows-latest }
-          - { triple: x86_64-apple-darwin, os: macos-latest }
+          - { triple: x86_64-unknown-linux-gnu, os: ubuntu-latest, extension: "" }
+          - { triple: x86_64-pc-windows-gnu, os: windows-latest, extension: ".exe" }
+          - { triple: x86_64-apple-darwin, os: macos-latest, extension: "" }
     runs-on: ${{ matrix.os }}
     permissions:
       contents: write  # This gives permission to create releases
@@ -66,12 +66,19 @@ jobs:
         fi
       shell: bash
 
+    - name: Prepare Executable for Release
+      if: steps.build_step.outputs.build_success == 'true'
+      run: |
+        mkdir -p release
+        cp target/${{ matrix.target.triple }}/release/SimpleModManager-Rust${{ matrix.target.extension }} release/
+      shell: bash
+
     - name: Upload Artifact
       if: steps.build_step.outputs.build_success == 'true'
       uses: actions/upload-artifact@v3
       with:
         name: ${{ matrix.target.triple }}-binaries
-        path: target/${{ matrix.target.triple }}/release/
+        path: release/
 
     - name: Generate Unique Tag
       if: steps.build_step.outputs.build_success == 'true'
@@ -92,6 +99,17 @@ jobs:
           Pre-release build for ${{ matrix.target.triple }} on ${{ matrix.os }}
         draft: false
         prerelease: true
+
+    - name: Upload Release Asset
+      if: steps.build_step.outputs.build_success == 'true'
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_pre_release.outputs.upload_url }}
+        asset_path: release/SimpleModManager-Rust${{ matrix.target.extension }}
+        asset_name: SimpleModManager-Rust-${{ matrix.target.triple }}${{ matrix.target.extension }}
+        asset_content_type: application/octet-stream
 
   release:
     needs: build
