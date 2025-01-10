@@ -3,24 +3,19 @@ name = "SimpleModManager-Rust"
 version = "0.1.0"
 edition = "2021"
 
-[target.'cfg(target_os = "windows")']
+[target.'cfg(target_os = "windows")]
 build-dependencies = ["winres"]
-
-[target.'cfg(target_os = "macos")']
+[target.'cfg(target_os = "macos")]
 build-dependencies = ["cbindgen"]
 
 [dependencies]
-eframe = { version = "0.22.0", features = ["default-assets", "winit"] }
-egui = { version = "0.22.0", features = ["winit", "serde"] }
+eframe = { version = "0.22.*", features = ["default-assets", "winit"] }
+egui = { version = "0.22.*", features = ["winit", "serde"] }
 rfd = "0.11.3"
-serde = { version = "1.0.160", features = ["derive", "serialize", "deserialize"] }
-serde_json = "1.0.96"
+serde = { version = "1.0.*", features = ["derive", "serialize", "deserialize"] }
+serde_json = "1.0.*"
 sevenz-rust = { version = "0.1.0", features = ["bin_progs"] }
-sha2 = "0.10.6"
-zip = "0.6.4"
+sha2 = "0.10.*"
+zip = "0.6.*"
 
-[profile.release]
-opt-level = 'z'  # Optimize for size
-lto = true       # Link Time Optimization
-codegen-units = 1  # Increase compilation time but reduces binary size
-strip = true     # Strip symbols from binary
+# Additional features can be added here if needed
