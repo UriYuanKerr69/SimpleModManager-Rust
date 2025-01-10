@@ -39,7 +39,7 @@ jobs:
     - name: Set Environment Variables (Windows)
       if: runner.os == 'Windows'
       run: |
-        echo "PATH=$PATH;C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\VC\Tools\MSVC\14.29.30133\bin\Hostx64\x64" >> $GITHUB_ENV
+        echo "PATH=$PATH;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.34.31933\bin\Hostx64\x64" >> $GITHUB_ENV
       shell: bash
 
     - name: Build
@@ -70,6 +70,19 @@ jobs:
       with:
         name: ${{ matrix.target.triple }}-binaries
         path: target/${{ matrix.target.triple }}/release/
+
+    - name: Create Pre-Release
+      if: steps.build_step.outputs.build_success == 'true'
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.sha }}  # Use commit SHA as tag for pre-release
+        release_name: Pre-Release ${{ github.sha }}
+        body: |
+          Pre-release build for ${{ matrix.target.triple }}
+        draft: false
+        prerelease: true
 
   release:
     needs: build
