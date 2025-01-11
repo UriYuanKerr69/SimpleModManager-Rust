@@ -1,5 +1,5 @@
 [package]
-name = "SimpleModManager-Rust"
+name = "simplemodmanager-rust"
 version = "0.1.0"
 edition = "2021"
 
@@ -21,7 +21,6 @@ crate-type = ["cdylib", "rlib"]
 [target.'cfg(target_os = "windows") && target.'cfg(target_env = "msvc")]
 build-dependencies = ["cargo-winres"]
 
-# Profile settings for Windows MSVC
 [profile.release]
 debug = false
 opt-level = "z"
@@ -29,5 +28,3 @@ lto = true
 
 [profile.release.build-override]
 rustc-flags = ["-C", "link-arg=-s"]
-
-#Any Additional Setup
