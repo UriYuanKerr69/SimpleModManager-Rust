@@ -13,10 +13,10 @@ jobs:
   build_artifacts:
     strategy:
       matrix:
-        os: [ubuntu-20.04, macos-latest, windows-latest]
-        target: [x86_64-unknown-linux-gnu, x86_64-apple-darwin, x86_64-pc-windows-msvc]
+        os: [ubuntu-20.04, macos-12, windows-latest]
+        rust-version: [nightly]
 
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.os == 'windows-latest' ? 'windows-latest' : 'self-hosted' }}
 
     steps:
       - name: Checkout repository
@@ -25,25 +25,24 @@ jobs:
       - name: Install Rust
         uses: actions/setup-rust@v3
         with:
-          rust-version: nightly
-          target: ${{ matrix.target }}
+          rust-version: ${{ matrix.rust-version }}
 
       - name: Set up Cargo
-        if: ${{ matrix.os == 'windows-latest' && matrix.target == 'x86_64-pc-windows-msvc' }}
-        run: cargo install --version 0.63.0-nightly cargo-winres
-        shell: cmd
+        if: ${{ matrix.os == 'windows-latest' && matrix.rust-version == 'nightly' && matrix.target == 'x86_64-pc-windows-msvc' }}
+        run: cargo install --version ${{ matrix.rust-version }}.y cargo-winres
+        shell: bash
 
       - name: Build for ${{ matrix.os }}, ${{ matrix.target }}
         run: cargo build --release --target ${{ matrix.target }}
         shell: bash
 
       - name: Create Artifact
-        if: ${{ success() && matrix.os == runner.os && matrix.target == runner.arch }}
-        run: echo "Creating artifact for ${{ matrix.target }}"
+        if: ${{ success() && matrix.os == runner.os && matrix.target == runner.arch && matrix.rust-version == 'nightly' }}
+        run: echo "Creating artifact for ${{ matrix.os }}"
         shell: bash
 
       - name: Upload Artifact
-        if: ${{ success() && matrix.os == runner.os && matrix.target == runner.arch }}
+        if: ${{ success() && matrix.os == runner.os && matrix.target == runner.arch && matrix.rust-version == 'nightly' }}
         uses: actions/upload-artifact@v3
         with:
           name: ${{ matrix.os }}-binaries
