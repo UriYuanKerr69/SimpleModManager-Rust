@@ -22,17 +22,32 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Install Rust
-        uses: actions/setup-rust@v3
+      - name: Setup Rust and Cargo
+      # You may pin to the exact commit or the version.
+      # uses: moonrepo/setup-rust@e013866c4215f77c925f42f60257dec7dd18836e
+        uses: moonrepo/setup-rust@v1.2.1
         with:
-          rust-version: nightly
-          target: ${{ matrix.target }}
-
-      - name: Set up Cargo
-        if: ${{ matrix.os == 'windows-latest' && matrix.target == 'x86_64-pc-windows-msvc' }}
-        run: cargo install --version 0.63.0-nightly cargo-winres
-        shell: cmd
-
+        # Comma-separated list of global binaries to install into Cargo.
+        bins: # optional
+        # Toggle caching of ~/.cargo/registry and /target/<cache-target> directories.
+        cache: # optional, default is true
+        # Base branch/ref to save a warmup cache on. Other branches/refs will restore from this base.
+        cache-base: # optional
+        # Name of the target profile to cache.
+        cache-target: # optional, default is debug
+        # Toolchain specification/channel to explicitly install.
+        channel: # optional
+        # Comma-separated list of additional components to install.
+        components: # optional
+        # Inherit all toolchain settings from the rust-toolchain.toml file.
+        inherit-toolchain: # optional, default is false
+        # Comma-separated list of additional targets to install.
+        targets: # optional
+        # Comma-separated list of target folder paths, relative from the repository root.
+        target-dirs: # optional, default is target
+        # Profile to install. Defaults to "minimal".
+        profile: # optional
+          
       - name: Build for ${{ matrix.os }}, ${{ matrix.target }}
         run: cargo build --release --target ${{ matrix.target }}
         shell: bash
