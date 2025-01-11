@@ -3,12 +3,6 @@ name = "SimpleModManager-Rust"
 version = "0.1.0"
 edition = "2021"
 
-# Additional features for Windows
-[target.'cfg(target_os = "windows") && target.'cfg(target_env = "msvc") ]
-build-dependencies = ["cargo-winres"]
-
-# Additional features can be added here if needed
-
 [dependencies]
 eframe = { version = "0.22.*", features = ["default-assets", "winit"] }
 egui = { version = "0.22.*", features = ["winit", "serde"] }
@@ -19,15 +13,15 @@ sevenz-rust = { version = "0.1.0", features = ["bin_progs"] }
 sha2 = { version = "0.10.*", features = ["std"] }
 zip = { version = "0.6.*", features = ["deflate", "bzip2", "lzma"] }
 
-# Additional dependencies can be added here if needed
-
 [lib]
 name = "simplemodmanager"
 crate-type = ["cdylib", "rlib"]
 
-# Additional configuration for the library can be added here if needed
+# Windows specific build dependencies
+[target.'cfg(target_os = "windows") && target.'cfg(target_env = "msvc")]
+build-dependencies = ["cargo-winres"]
 
-# Cargo.toml configuration for Windows
+# Profile settings for Windows MSVC
 [profile.release]
 debug = false
 opt-level = "z"
@@ -36,4 +30,4 @@ lto = true
 [profile.release.build-override]
 rustc-flags = ["-C", "link-arg=-s"]
 
-# Additional build configuration for other targets can be added here if needed
+#Any Additional Setup
