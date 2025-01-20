@@ -30,12 +30,6 @@ jobs:
         target: |
           ${{ matrix.os == 'windows-latest' && 'x86_64-pc-windows-msvc' || matrix.os == 'ubuntu-20.04' && 'x86_64-unknown-linux-gnu' || 'aarch64-apple-darwin' }}
 
-    - name: Set up Cargo (Windows)
-      if: runner.os == 'Windows'
-      run: |
-        cargo install cargo-winres
-      shell: bash
-
     - name: Build
       uses: actions-rs/cargo@v1
       with:
