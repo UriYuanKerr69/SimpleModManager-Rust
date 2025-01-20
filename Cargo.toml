@@ -26,5 +26,5 @@ debug = false
 opt-level = "z"
 lto = true
 
-[profile.release.build-override]
-rustc-flags = ["-C", "link-arg=-s"]
+#[profile.release.build-override]
+#rustc-flags = ["-C", "link-arg=-s"]
