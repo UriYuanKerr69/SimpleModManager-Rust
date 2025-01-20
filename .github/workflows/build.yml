@@ -13,7 +13,7 @@ jobs:
   build_artifacts:
     strategy:
       matrix:
-        os: [ubuntu-20.04, macos-12, windows-latest]
+        os: [ubuntu-20.04, macos-latest, windows-latest]
         rust-version: [nightly]
 
     runs-on: ${{ matrix.os }}
@@ -31,7 +31,7 @@ jobs:
     - name: Set up Cargo (Windows)
       if: runner.os == 'Windows'
       run: |
-        cargo install --version ${{ matrix.rust-version }}.y cargo-winres
+        cargo install cargo-winres
       shell: bash
 
     - name: Build
@@ -41,7 +41,7 @@ jobs:
         elif [[ "$RUNNER_OS" == "Linux" ]]; then
           cargo build --release --target x86_64-unknown-linux-gnu
         else
-          cargo build --release --target x86_64-apple-darwin
+          cargo build --release --target aarch64-apple-darwin  # Assumes macOS on Apple Silicon, change to x86_64 if needed
         fi
       shell: bash
 
