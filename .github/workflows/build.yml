@@ -16,34 +16,42 @@ jobs:
         os: [ubuntu-20.04, macos-12, windows-latest]
         rust-version: [nightly]
 
-    runs-on: ${{ matrix.os == 'windows-latest' ? 'windows-latest' : 'self-hosted' }}
+    runs-on: ${{ matrix.os }}
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+    - name: Checkout repository
+      uses: actions/checkout@v3
 
-      - name: Install Rust
-        uses: actions/setup-rust@v3
-        with:
-          rust-version: ${{ matrix.rust-version }}
+    - name: Install Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: ${{ matrix.rust-version }}
+        override: true
 
-      - name: Set up Cargo
-        if: ${{ matrix.os == 'windows-latest' && matrix.rust-version == 'nightly' && matrix.target == 'x86_64-pc-windows-msvc' }}
-        run: cargo install --version ${{ matrix.rust-version }}.y cargo-winres
-        shell: bash
+    - name: Set up Cargo (Windows)
+      if: runner.os == 'Windows'
+      run: |
+        cargo install --version ${{ matrix.rust-version }}.y cargo-winres
+      shell: bash
 
-      - name: Build for ${{ matrix.os }}, ${{ matrix.target }}
-        run: cargo build --release --target ${{ matrix.target }}
-        shell: bash
+    - name: Build
+      run: |
+        if [[ "$RUNNER_OS" == "Windows" ]]; then
+          cargo build --release --target x86_64-pc-windows-msvc
+        elif [[ "$RUNNER_OS" == "Linux" ]]; then
+          cargo build --release --target x86_64-unknown-linux-gnu
+        else
+          cargo build --release --target x86_64-apple-darwin
+        fi
+      shell: bash
 
-      - name: Create Artifact
-        if: ${{ success() && matrix.os == runner.os && matrix.target == runner.arch && matrix.rust-version == 'nightly' }}
-        run: echo "Creating artifact for ${{ matrix.os }}"
-        shell: bash
+    - name: Create Artifact
+      run: echo "Creating artifact for ${{ matrix.os }}"
+      shell: bash
 
-      - name: Upload Artifact
-        if: ${{ success() && matrix.os == runner.os && matrix.target == runner.arch && matrix.rust-version == 'nightly' }}
-        uses: actions/upload-artifact@v3
-        with:
-          name: ${{ matrix.os }}-binaries
-          path: target/release/SimpleModManager-Rust
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ matrix.os }}-binaries
+        path: |
+          target/release/SimpleModManager-Rust*
