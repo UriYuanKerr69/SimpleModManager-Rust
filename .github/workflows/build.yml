@@ -27,11 +27,9 @@ jobs:
       with:
         toolchain: ${{ matrix.rust-version }}
         override: true
+        # Specify only the target for the current OS
         target: |
-          x86_64-unknown-linux-gnu
-          x86_64-pc-windows-msvc
-          aarch64-apple-darwin
-          x86_64-apple-darwin
+          ${{ matrix.os == 'windows-latest' && 'x86_64-pc-windows-msvc' || matrix.os == 'ubuntu-20.04' && 'x86_64-unknown-linux-gnu' || 'aarch64-apple-darwin' }}
 
     - name: Set up Cargo (Windows)
       if: runner.os == 'Windows'
