@@ -27,7 +27,6 @@ jobs:
       with:
         toolchain: ${{ matrix.rust-version }}
         override: true
-        # Specify only the target for the current OS
         target: |
           ${{ matrix.os == 'windows-latest' && 'x86_64-pc-windows-msvc' || matrix.os == 'ubuntu-20.04' && 'x86_64-unknown-linux-gnu' || 'aarch64-apple-darwin' }}
 
@@ -38,15 +37,10 @@ jobs:
       shell: bash
 
     - name: Build
-      run: |
-        if [[ "$RUNNER_OS" == "Windows" ]]; then
-          cargo build --release --target x86_64-pc-windows-msvc
-        elif [[ "$RUNNER_OS" == "Linux" ]]; then
-          cargo build --release --target x86_64-unknown-linux-gnu
-        else
-          cargo build --release --target $(uname -m)-apple-darwin
-        fi
-      shell: bash
+      uses: actions-rs/cargo@v1
+      with:
+        command: build
+        args: --release --target ${{ matrix.os == 'windows-latest' && 'x86_64-pc-windows-msvc' || matrix.os == 'ubuntu-20.04' && 'x86_64-unknown-linux-gnu' || '$(uname -m)-apple-darwin' }}
 
     - name: Create Artifact
       run: echo "Creating artifact for ${{ matrix.os }}"
@@ -57,4 +51,4 @@ jobs:
       with:
         name: ${{ matrix.os }}-binaries
         path: |
-          target/release/SimpleModManager-Rust*
+          target/${{ matrix.os == 'windows-latest' && 'x86_64-pc-windows-msvc/release' || matrix.os == 'ubuntu-20.04' && 'x86_64-unknown-linux-gnu/release' || '$(uname -m)-apple-darwin/release' }}/SimpleModManager-Rust*
