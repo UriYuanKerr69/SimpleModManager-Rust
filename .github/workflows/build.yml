@@ -27,6 +27,11 @@ jobs:
       with:
         toolchain: ${{ matrix.rust-version }}
         override: true
+        target: |
+          x86_64-unknown-linux-gnu
+          x86_64-pc-windows-msvc
+          aarch64-apple-darwin
+          x86_64-apple-darwin
 
     - name: Set up Cargo (Windows)
       if: runner.os == 'Windows'
@@ -41,7 +46,7 @@ jobs:
         elif [[ "$RUNNER_OS" == "Linux" ]]; then
           cargo build --release --target x86_64-unknown-linux-gnu
         else
-          cargo build --release --target aarch64-apple-darwin  # Assumes macOS on Apple Silicon, change to x86_64 if needed
+          cargo build --release --target $(uname -m)-apple-darwin
         fi
       shell: bash
 
