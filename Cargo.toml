@@ -18,8 +18,8 @@ name = "simplemodmanager"
 crate-type = ["cdylib", "rlib"]
 
 # Windows specific build dependencies
-[target.'cfg(target_os = "windows") && target.'cfg(target_env = "msvc")]
-build-dependencies = ["cargo-winres"]
+[target.'cfg(windows)'.build-dependencies]
+cargo-winres = "0.1.*"
 
 [profile.release]
 debug = false
