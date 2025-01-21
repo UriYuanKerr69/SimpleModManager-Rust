@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-eframe = { version = "0.22.*", features = ["default-assets", "winit"] }
+eframe = { version = "0.*.*", features = ["default-assets", "winit"] }
 egui = { version = "0.22.*", features = ["winit", "serde"] }
 rfd = "0.11.3"
 serde = { version = "1.0.*", features = ["derive", "serialize", "deserialize"] }
