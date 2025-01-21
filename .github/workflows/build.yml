@@ -28,13 +28,13 @@ jobs:
         toolchain: ${{ matrix.rust-version }}
         override: true
         target: |
-          ${{ matrix.os == 'windows-latest' && 'x86_64-pc-windows-msvc' || matrix.os == 'ubuntu-20.04' && 'x86_64-unknown-linux-gnu' || 'aarch64-apple-darwin' }}
+          ${{ matrix.os == 'windows-latest' && 'x86_64-pc-windows-msvc' || matrix.os == 'ubuntu-20.04' && 'x86_64-unknown-linux-gnu' || 'aarch64-apple-darwin, x86_64-apple-darwin' }}
 
     - name: Build
       uses: actions-rs/cargo@v1
       with:
         command: build
-        args: --release --target ${{ matrix.os == 'windows-latest' && 'x86_64-pc-windows-msvc' || matrix.os == 'ubuntu-20.04' && 'x86_64-unknown-linux-gnu' || '$(uname -m)-apple-darwin' }}
+        args: --release --target ${{ matrix.os == 'windows-latest' && 'x86_64-pc-windows-msvc' || matrix.os == 'ubuntu-20.04' && 'x86_64-unknown-linux-gnu' || runner.arch == 'arm64' && 'aarch64-apple-darwin' || 'x86_64-apple-darwin' }}
 
     - name: Create Artifact
       run: echo "Creating artifact for ${{ matrix.os }}"
@@ -45,4 +45,4 @@ jobs:
       with:
         name: ${{ matrix.os }}-binaries
         path: |
-          target/${{ matrix.os == 'windows-latest' && 'x86_64-pc-windows-msvc/release' || matrix.os == 'ubuntu-20.04' && 'x86_64-unknown-linux-gnu/release' || '$(uname -m)-apple-darwin/release' }}/SimpleModManager-Rust*
+          target/${{ matrix.os == 'windows-latest' && 'x86_64-pc-windows-msvc/release' || matrix.os == 'ubuntu-20.04' && 'x86_64-unknown-linux-gnu/release' || runner.arch == 'arm64' && 'aarch64-apple-darwin/release' || 'x86_64-apple-darwin/release' }}/SimpleModManager-Rust*
